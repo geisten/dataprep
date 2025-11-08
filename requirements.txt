@@ -1,0 +1,37 @@
+# Core dependencies
+numpy>=1.20.0
+beautifulsoup4>=4.11.0
+lxml>=4.9.0
+pillow>=9.0.0
+opencv-python>=4.7.0
+transformers>=4.30.0
+sentencepiece>=0.1.99
+pyyaml>=6.0
+tqdm>=4.65.0
+nltk>=3.8
+langdetect>=1.0.9
+xxhash>=3.2.0
+datasketch>=1.5.9
+pyarrow>=12.0.0
+pandas>=1.5.0
+
+# Optional: PDF processing
+pypdf2>=3.0.0
+pdfplumber>=0.9.0
+
+# Optional: LaTeX processing
+pylatexenc>=2.10
+
+# Optional: Video processing
+av>=10.0.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Optional: Quality filtering
+detoxify>=0.5.0
+
+# Development
+pytest>=7.3.0
+black>=23.3.0
+isort>=5.12.0
+flake8>=6.0.0

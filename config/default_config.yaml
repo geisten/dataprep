@@ -1,0 +1,185 @@
+# LLM Pre-Training Data Pipeline Configuration
+# Basierend auf Phi-3/4 Best Practices
+
+# Allgemeine Einstellungen
+general:
+  output_format: "jsonl"  # jsonl, parquet, arrow
+  num_workers: 4
+  batch_size: 1000
+  verbose: true
+
+# Phase 1: Web-Daten für allgemeines Wissen
+phase1:
+  enabled: true
+  sources:
+    - web_crawl
+    - common_crawl
+  quality_threshold: 0.5
+
+# Phase 2: Gefilterte + synthetische Daten
+phase2:
+  enabled: true
+  sources:
+    - filtered_web
+    - synthetic
+    - educational
+  quality_threshold: 0.7
+
+# Text-Verarbeitung
+text:
+  # HTML Extraktion
+  html:
+    preserve_formulas: true  # TeX/MathML
+    preserve_code: true      # Code-Blöcke
+    preserve_tables: true
+    remove_boilerplate: true
+    remove_ads: true
+
+  # Reinigung
+  cleaning:
+    normalize_unicode: true
+    fix_encoding: true
+    remove_control_chars: true
+    min_length: 100  # Minimum Zeichen
+    max_length: 1000000
+
+  # Sprachfilter
+  language:
+    detect: true
+    keep: ["de", "en"]  # Deutsche und englische Texte
+    min_confidence: 0.9
+
+# Deduplizierung (SoftDedup Ansatz)
+deduplication:
+  method: "soft"  # exact, fuzzy, soft
+
+  # Exact Deduplication
+  exact:
+    enabled: true
+    sharded: true
+
+  # Fuzzy Deduplication (MinHash LSH)
+  fuzzy:
+    enabled: true
+    threshold: 0.8
+    ngram_size: 5
+    num_perm: 128
+
+  # Soft Deduplication (Reweighting statt Löschen)
+  soft:
+    enabled: true
+    reweight_factor: 0.5
+    similarity_threshold: 0.85
+
+# Qualitätsfilter
+quality:
+  # Heuristische Filter
+  heuristic:
+    min_avg_word_length: 3
+    max_avg_word_length: 10
+    min_alpha_ratio: 0.8
+    max_symbol_ratio: 0.1
+    max_digit_ratio: 0.2
+    max_uppercase_ratio: 0.3
+    max_line_repetition: 0.3
+    max_paragraph_repetition: 0.3
+    min_lines: 3
+    max_url_ratio: 0.2
+
+  # Modellbasierter Filter (wie Nemotron-4)
+  model_based:
+    enabled: false  # Erfordert API/Modell
+    attributes:
+      - helpfulness
+      - correctness
+      - coherence
+      - complexity
+      - verbosity
+    threshold: 0.6
+
+  # Toxizitätsfilter
+  toxicity:
+    enabled: true
+    max_toxicity: 0.5
+    check_categories:
+      - toxicity
+      - severe_toxicity
+      - obscene
+      - threat
+      - insult
+
+# Strukturierte Formate
+structured:
+  # Markdown
+  markdown:
+    preserve_structure: true
+    extract_code_blocks: true
+    preserve_links: true
+
+  # LaTeX
+  latex:
+    multi_file_support: true
+    preserve_math: true
+    extract_text_only: false
+
+  # PDF
+  pdf:
+    extract_layout: true
+    ocr_fallback: false
+    min_quality_score: 0.7
+
+# Multimodal (für Vision-Language Models)
+multimodal:
+  # Bild-Verarbeitung
+  image:
+    enabled: true
+    formats: ["jpg", "jpeg", "png", "webp"]
+    resize_mode: "adaptive"  # fixed, adaptive, none
+    target_size: 224
+    max_size: 512
+    normalize: true
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+
+  # Video-Verarbeitung
+  video:
+    enabled: true
+    formats: ["mp4", "avi", "webm"]
+    fps: 1  # Frames pro Sekunde zu extrahieren
+    max_frames: 100
+    resize: 224
+    temporal_pooling: "average"  # average, max, attention
+
+  # Vision-Text Alignment
+  alignment:
+    method: "clip"  # clip, blip, custom
+    min_similarity: 0.3
+
+# Tokenisierung
+tokenization:
+  tokenizer: "gpt2"  # gpt2, llama, custom
+  max_length: 2048
+  padding: false
+  truncation: true
+  return_attention_mask: true
+
+# Export
+export:
+  output_dir: "./processed_data"
+  phase1_dir: "./processed_data/phase1"
+  phase2_dir: "./processed_data/phase2"
+  compression: "gzip"  # none, gzip, snappy
+  max_samples_per_file: 10000
+
+  # Metadaten zu speichern
+  metadata:
+    save_source: true
+    save_timestamp: true
+    save_quality_scores: true
+    save_statistics: true
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "./logs/pipeline.log"
+  console: true
